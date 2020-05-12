@@ -1,0 +1,62 @@
+.pnnl-miscscripts-lib:
+  mirror-containers: &pnnllib-gitlab-mirror-container-images
+    # Arguments are passed in environment variables
+    # CONTAINERS - Newline seperated list of images to mirror
+    # CONTAINER_CONVERT - define if the images must be converted to store in gitlab
+    # CONTAINER_PREFIX - extra prefix for the images. Can be used to add a string on the front of an image name or a parent directory in the repository.
+    image: docker.io/kfox1111/misc:skopeo
+    script:
+    - |
+      set -e
+      mkdir -p /etc/gitlab-runner/certs/
+      echo "$CONTINERS" | while read IMAGE; do
+        NEWNAME=$(echo "$IMAGE" | sed 's@.*/@@g')
+        mkdir -p /tmp/containers/"$NEWNAME"
+        echo Mirroring "$IMAGE" to "$NEWNAME"
+        if [ "x$CONTAINER_CONVERT" != "x" ]; then
+          set +e
+          skopeo inspect \
+            docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME"
+            --raw \
+            --cert-dir /etc/gitlab-runner/certs/ \
+            --creds "gitlab-ci-token:$CI_JOB_TOKEN" \
+            > /dev/null && echo already exists && continue
+          set -xe
+          skopeo copy \
+            --format v2s2 \
+            docker://"$IMAGE" \
+            dir:/tmp/containers/"$NEWNAME"
+          skopeo copy \
+            --dest-cert-dir /etc/gitlab-runner/certs/ \
+            --dest-creds "gitlab-ci-token:$CI_JOB_TOKEN" \
+            dir:/tmp/containers/"$NEWNAME" \
+            docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME"
+        else
+          skopeo copy \
+            docker://"$IMAGE" \
+            --dest-cert-dir /etc/gitlab-runner/certs/ \
+            --dest-creds "gitlab-ci-token:$CI_JOB_TOKEN" \
+            docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME"
+        fi
+      done
+  build-containers: &pnnllib-gitlab-build-container-image
+    # Build an image using Kaniko
+    # Arguments are passed in environment variables
+    # CONTAINER_PREFIX - extra prefix for the image. Can be used to add a string on the front of an image name or a parent directory in the repository.
+    # CONTAINER_TAG - The container tag to use. Defaults to $CI_COMMIT_TAG
+    # DOCKERFILE - The name of the dockerfile to use. Defaults to Dockerfile.
+    image:
+      name: gcr.io/kaniko-project/executor:debug
+      entrypoint: [""]
+    script:
+    - mkdir -p /kaniko/.docker
+    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - |
+      if [ /etc/gitlab-runner/certs/ca.crt ]; then
+        cat /etc/gitlab-runner/certs/ca.crt >> /kaniko/ssl/certs/ca-certificates.crt
+      fi
+    - |
+      DOCKERFILE="${DOCKERFILE:-Dockerfile}"
+      CONTAINER_TAG="${CONTAINER_TAG:-$CI_COMMIT_TAG}"
+      /kaniko/executor --context "$CI_PROJECT_DIR" --dockerfile "$CI_PROJECT_DIR/$DOCKERFILE" --destination "$CI_REGISTRY_IMAGE${CONTAINER_PREFIX}:$CONTAINER_TAG"
+
