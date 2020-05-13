@@ -1,5 +1,4 @@
-.pnnl-miscscripts-lib:
-  mirror-containers: &pnnllib-gitlab-mirror-container-images
+.pnnllib-gitlab-mirror-container-images:
     # Arguments are passed in environment variables
     # CONTAINERS - Newline seperated list of images to mirror
     # CONTAINER_CONVERT - define if the images must be converted to store in gitlab
@@ -9,14 +8,15 @@
     - |
       set -e
       mkdir -p /etc/gitlab-runner/certs/
-      echo "$CONTINERS" | while read IMAGE; do
+      echo "Mirroring: $CONTAINERS"
+      echo "$CONTAINERS" | while read IMAGE; do
         NEWNAME=$(echo "$IMAGE" | sed 's@.*/@@g')
         mkdir -p /tmp/containers/"$NEWNAME"
         echo Mirroring "$IMAGE" to "$NEWNAME"
         if [ "x$CONTAINER_CONVERT" != "x" ]; then
           set +e
           skopeo inspect \
-            docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME"
+            docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME" \
             --raw \
             --cert-dir /etc/gitlab-runner/certs/ \
             --creds "gitlab-ci-token:$CI_JOB_TOKEN" \
@@ -39,7 +39,52 @@
             docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME"
         fi
       done
-  build-containers: &pnnllib-gitlab-build-container-image
+
+.pnnllib-gitlab-mirror-chart-to-image:
+    # CHART - Name of the chart to mirror
+    # REPO - Repository URL to mirror from
+    # VERSION - Optional helm chart version to pull
+    # CONTAINER_PREFIX - extra prefix for the images. Can be used to add a string on the front of an image name or a parent directory in the repository.
+    # PATCH - Optional patch to apply to the chart
+    # PATCHLEVEL - Optional patch level to patch. Default 1.
+    image:
+      name: lachlanevenson/k8s-helm:v3.0.2
+      entrypoint: [""]
+    script:
+    - |
+      set -e
+
+      #Copy cert into the ca trust store so that helm chart push will work. (Alpine)
+      if [ -f /etc/gitlab-runner/certs/ca.crt ]; then
+        cat /etc/gitlab-runner/certs/ca.crt > /usr/local/share/ca-certificates/self.crt
+        update-ca-certificates
+      fi
+
+      helm repo add myrepo "$REPO"
+      helm repo update
+
+      echo Pulling chart.
+      if [ "x$VERSION" != "x" ]; then
+        helm pull myrepo/"$CHART" --untar --version "$VERSION"
+      else
+        helm pull myrepo/"$CHART" --untar
+      fi
+
+      if [ "x$PATCH" != "x" ]; then
+        echo Patching chart
+        cd "$CHART"
+        PATCHLEVEL="${PATCHLEVEL:-1}"
+        patch -p"$PATCHLEVEL" < "../$PATCH"
+        cd ..
+      fi
+      echo Uploading
+      VERSION=$(helm show chart "$CHART" | awk '/^version:/{print $2}')
+      export HELM_EXPERIMENTAL_OCI=1
+      echo "$CI_REGISTRY_PASSWORD" | helm registry login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+      helm chart save "$CHART" "$CI_REGISTRY_IMAGE$CONTAINER_PREFIX:$VERSION"
+      helm chart push "$CI_REGISTRY_IMAGE$CONTAINER_PREFIX:$VERSION"
+
+.pnnllib-gitlab-build-container-image:
     # Build an image using Kaniko
     # Arguments are passed in environment variables
     # CONTAINER_PREFIX - extra prefix for the image. Can be used to add a string on the front of an image name or a parent directory in the repository.

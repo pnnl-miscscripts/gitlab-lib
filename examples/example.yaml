@@ -1,0 +1,18 @@
+include:
+  - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v0/gitlab-lib.yaml'
+
+mirrorimage:
+  extends: .pnnllib-gitlab-mirror-container-images
+  stage: build
+  variables:
+    CONTAINERS: k8s.gcr.io/metrics-server-amd64:v0.3.6
+    CONTAINER_CONVERT: y
+
+mirrorchart:
+  extends: .pnnllib-gitlab-mirror-chart-to-image
+  stage: build
+  variables:
+    CHART: metrics-server
+    REPO: https://kubernetes-charts.storage.googleapis.com/
+    VERSION: 2.11.1
+    CONTAINER_PREFIX: /chart
