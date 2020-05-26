@@ -12,7 +12,7 @@
       echo "Mirroring: $CONTAINERS"
       echo "$CONTAINERS" | while read IMAGE; do
         NEWNAME=$(echo "$IMAGE" | sed 's@.*/@@g')
-        [ "x$RETAG" == "x" ] || NEWIMAGE=$(echo "$NEWNAME" | sed 's/^\(.*\)[:@].*/'"$RETAG"'/')
+        [ "x$RETAG" == "x" ] || NEWNAME=$(echo "$NEWNAME" | sed 's/^\(.*\)[:@].*/'"$RETAG"'/')
         mkdir -p /tmp/containers/"$NEWNAME"
         echo Mirroring "$IMAGE" to "$NEWNAME"
         if [ "x$CONTAINER_CONVERT" != "x" ]; then
