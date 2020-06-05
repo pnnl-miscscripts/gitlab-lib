@@ -121,5 +121,5 @@
     script:
     - |
       SECRET_NAME="${SECRET_NAME:-gitlab-registry-token}"
-      kubectl get secret regcred || kubectl create secret docker-registry "$SECRET_NAME" --docker-server="$CI_REGISTRY" --docker-username="$CI_DEPLOY_USER" --docker-password="$CI_DEPLOY_PASSWORD" --docker-email=gitab@blackhole.com
+      kubectl get secret "$SECRET_NAME" || kubectl create secret docker-registry "$SECRET_NAME" --docker-server="$CI_REGISTRY" --docker-username="$CI_DEPLOY_USER" --docker-password="$CI_DEPLOY_PASSWORD" --docker-email=gitab@blackhole.com
 
