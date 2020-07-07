@@ -1,5 +1,5 @@
 include:
-  - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v0/gitlab-lib.yaml'
+  - remote: 'https://raw.githubusercontent.com/pnnl-miscscripts/gitlab-lib/v1/gitlab-lib.yaml'
 
 mirrorimage:
   extends: .pnnllib-gitlab-mirror-container-images

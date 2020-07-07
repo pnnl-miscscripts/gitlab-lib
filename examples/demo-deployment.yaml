@@ -1,0 +1,24 @@
+#Use along with simpleworkflow.yaml
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo
+  labels:
+    app: demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo
+  template:
+    metadata:
+      labels:
+        app: demo
+    spec:
+      containers:
+      - name: main
+        image: FIXMEimage:FIXMEtag
+        imagePullPolicy: IfNotPresent
+        imagePullSecrets:
+        - name: gitlab-registry-token
