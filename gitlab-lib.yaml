@@ -99,7 +99,7 @@
     - mkdir -p /kaniko/.docker
     - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
     - |
-      if [ /etc/gitlab-runner/certs/ca.crt ]; then
+      if [ -f /etc/gitlab-runner/certs/ca.crt ]; then
         cat /etc/gitlab-runner/certs/ca.crt >> /kaniko/ssl/certs/ca-certificates.crt
       fi
     - |
