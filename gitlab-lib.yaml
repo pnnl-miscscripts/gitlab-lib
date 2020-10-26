@@ -110,7 +110,7 @@
 .pnnllib-gitlab-load-deploy-token:
     # Load a gitlab deploy token into Kubernetes
     #
-    # You musth have created a deploy token with just 'read_registry'
+    # You must have already created a deploy token with just 'read_registry'
     # permission named 'gitlab-deploy-token' as described here:
     # https://docs.gitlab.com/ee/user/project/deploy_tokens/#creating-a-deploy-token
     #
