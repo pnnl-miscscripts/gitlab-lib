@@ -92,6 +92,7 @@
     # CONTAINER_PREFIX - extra prefix for the image. Can be used to add a string on the front of an image name or a parent directory in the repository.
     # CONTAINER_TAG - The container tag to use. Defaults to $CI_COMMIT_TAG
     # DOCKERFILE - The name of the dockerfile to use. Defaults to Dockerfile.
+    # KANIKO_EXTRA_ARGS - Extra arguments passed to Kaniko. Example, `--build-arg MY_BUILD_VAR=foo`.
     image:
       name: gcr.io/kaniko-project/executor:debug
       entrypoint: [""]
@@ -105,7 +106,8 @@
     - |
       DOCKERFILE="${DOCKERFILE:-Dockerfile}"
       CONTAINER_TAG="${CONTAINER_TAG:-$CI_COMMIT_TAG}"
-      /kaniko/executor --context "$CI_PROJECT_DIR" --dockerfile "$CI_PROJECT_DIR/$DOCKERFILE" --destination "$CI_REGISTRY_IMAGE${CONTAINER_PREFIX}:$CONTAINER_TAG"
+      KANIKO_EXTRA_ARGS="${KANIKO_EXTRA_ARGS:-}"
+      /kaniko/executor --context "$CI_PROJECT_DIR" --dockerfile "$CI_PROJECT_DIR/$DOCKERFILE" --destination "$CI_REGISTRY_IMAGE${CONTAINER_PREFIX}:$CONTAINER_TAG" $KANIKO_EXTRA_ARGS
 
 .pnnllib-gitlab-load-deploy-token:
     # Load a gitlab deploy token into Kubernetes
