@@ -16,7 +16,7 @@ build-image:
 
 #Load a secret into the Kubernetes cluster. Note, please follow the steps below to create a deploy token in gitlab before this step will work.
 deply-token-to-cluster:
-  extends: .pnnllib-gitlab-load-deploy-token:
+  extends: .pnnllib-gitlab-load-deploy-token
   stage: build
   variables:
     # You musth have created a deploy token with just 'read_registry'
