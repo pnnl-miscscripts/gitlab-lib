@@ -11,6 +11,7 @@
       mkdir -p /etc/gitlab-runner/certs/
       echo "Mirroring: $CONTAINERS"
       echo "$CONTAINERS" | while read IMAGE; do
+        [ "x$IMAGE" == "x" ] && continue
         NEWNAME=$(echo "$IMAGE" | sed 's@.*/@@g')
         [ "x$RETAG" == "x" ] || NEWNAME=$(echo "$NEWNAME" | sed 's/^\([^@:]*\)\([:@]\)\(.*\)/'"$RETAG"'/')
         mkdir -p /tmp/containers/"$NEWNAME"
