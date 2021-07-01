@@ -9,6 +9,7 @@
     - |
       set -e
       mkdir -p /etc/gitlab-runner/certs/
+      [ "x$CONTAINERS_FILE" != "x" ] && export CONTAINERS="$(cat CONTAINERS_FILE)"
       echo "Mirroring: $CONTAINERS"
       echo "$CONTAINERS" | while read IMAGE; do
         NEWNAME=$(echo "$IMAGE" | sed 's@.*/@@g')
