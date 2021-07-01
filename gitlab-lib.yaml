@@ -1,6 +1,7 @@
 .pnnllib-gitlab-mirror-container-images:
     # Arguments are passed in environment variables
     # CONTAINERS - Newline seperated list of images to mirror
+    # CONTAINERS_FILE - Optional artifact filename which lists the desired images to be cached in a multiline format
     # CONTAINER_CONVERT - define if the images must be converted to store in gitlab
     # CONTAINER_PREFIX - extra prefix for the images. Can be used to add a string on the front of an image name or a parent directory in the repository.
     # RETAG - Change the tag or sha of the image. to rename the image from foo:bar to foo:baz, set to "\1:baz"
@@ -9,6 +10,7 @@
     - |
       set -e
       mkdir -p /etc/gitlab-runner/certs/
+      [ "x$CONTAINERS_FILE" != "x" ] && export CONTAINERS="$(cat CONTAINERS_FILE)"
       echo "Mirroring: $CONTAINERS"
       echo "$CONTAINERS" | while read IMAGE; do
         [ "x$IMAGE" == "x" ] && continue
