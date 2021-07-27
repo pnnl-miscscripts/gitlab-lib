@@ -101,7 +101,15 @@
       entrypoint: [""]
     script:
     - mkdir -p /kaniko/.docker
-    - echo "{\"auths\":{\"$CI_REGISTRY\":{\"username\":\"$CI_REGISTRY_USER\",\"password\":\"$CI_REGISTRY_PASSWORD\"}}}" > /kaniko/.docker/config.json
+    - |-
+       KANIKOPROXYBUILDARGS=""
+       KANIKOCFG="{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}"
+       if [ "x${http_proxy}" != "x" -o "x${https_proxy}" != "x" ]; then
+         KANIKOCFG="${KANIKOCFG}, \"proxies\": { \"default\": { \"httpProxy\": \"${http_proxy}\", \"httpsProxy\": \"${https_proxy}\", \"noProxy\": \"${no_proxy}\"}}"
+         KANIKOPROXYBUILDARGS="--build-arg http_proxy=${http_proxy} --build-arg https_proxy=${https_proxy} --build-arg no_proxy=${no_proxy}"
+       fi
+       KANIKOCFG="${KANIKOCFG} }"
+       echo "${KANIKOCFG}" > /kaniko/.docker/config.json
     - |
       if [ -f /etc/gitlab-runner/certs/ca.crt ]; then
         cat /etc/gitlab-runner/certs/ca.crt >> /kaniko/ssl/certs/ca-certificates.crt
