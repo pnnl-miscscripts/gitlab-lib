@@ -20,5 +20,5 @@ spec:
       - name: main
         image: FIXMEimage:FIXMEtag
         imagePullPolicy: IfNotPresent
-        imagePullSecrets:
-        - name: gitlab-registry-token
+      imagePullSecrets:
+      - name: gitlab-registry-token
