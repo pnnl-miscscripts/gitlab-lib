@@ -101,7 +101,7 @@
         CONTAINER_TAG="${CONTAINER_TAG:-$CI_COMMIT_TAG}"
         mkdir -p /etc/gitlab-runner/certs
         skopeo inspect \
-            docker://""$CI_REGISTRY_IMAGE${CONTAINER_PREFIX}:${CONTAINER_TAG}" \
+            docker://"$CI_REGISTRY_IMAGE${CONTAINER_PREFIX}:${CONTAINER_TAG}" \
             --raw \
             --cert-dir /etc/gitlab-runner/certs/ \
             --creds "gitlab-ci-token:$CI_JOB_TOKEN" \
