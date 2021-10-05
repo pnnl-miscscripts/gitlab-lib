@@ -5,12 +5,16 @@
     # CONTAINER_CONVERT - define if the images must be converted to store in gitlab
     # CONTAINER_PREFIX - extra prefix for the images. Can be used to add a string on the front of an image name or a parent directory in the repository.
     # RETAG - Change the tag or sha of the image. to rename the image from foo:bar to foo:baz, set to "\1:baz"
+    # SOURCE_USERNAME - Optional username to use for download
+    # SOURCE_PASSWORD - Optional password to use for download
     image: docker.io/kfox1111/misc:skopeo
     script:
     - |
       set -e
       mkdir -p /etc/gitlab-runner/certs/
+      export EXTRA_FLAGS=""
       [ "x$CONTAINERS_FILE" != "x" ] && export CONTAINERS="$(cat $CONTAINERS_FILE)"
+      [ "x$SOURCE_USERNAME" != "x" -o "x$SOURCE_PASSWORD" != "x" ] && export EXTRA_FLAGS="--src-creds ${SOURCE_USERNAME}:${SOURCE_PASSWORD}"
       echo "Mirroring: $CONTAINERS"
       echo "$CONTAINERS" | while read IMAGE; do
         [ "x$IMAGE" == "x" ] && continue
@@ -27,7 +31,7 @@
             --creds "gitlab-ci-token:$CI_JOB_TOKEN" \
             > /dev/null && echo already exists && continue
           set -xe
-          skopeo copy \
+          skopeo copy $EXTRA_FLAGS \
             --format v2s2 \
             docker://"$IMAGE" \
             dir:/tmp/containers/"$NEWNAME"
@@ -38,7 +42,7 @@
             docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME"
         else
           skopeo copy \
-            docker://"$IMAGE" \
+            docker://"$IMAGE" $EXTRA_FLAGS  \
             --dest-cert-dir /etc/gitlab-runner/certs/ \
             --dest-creds "gitlab-ci-token:$CI_JOB_TOKEN" \
             docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME"
