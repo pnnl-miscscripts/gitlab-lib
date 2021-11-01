@@ -28,8 +28,8 @@ deply-token-to-cluster:
   extends: .pnnllib-gitlab-load-deploy-token
   stage: build
   variables:
-    # You musth have created a deploy token with just 'read_registry'
-    # permission named 'gitlab-deploy-token' as described here:
+    # You must have already created a deploy token with just 'read_registry'
+    # permission named 'gitlab-deploy-token', with username 'gitlab-deploy-token' as described here:
     # https://docs.gitlab.com/ee/user/project/deploy_tokens/#creating-a-deploy-token
     #
     # Arguments are passed in environment variables
