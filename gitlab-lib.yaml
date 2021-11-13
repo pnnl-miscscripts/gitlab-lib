@@ -149,5 +149,16 @@
     script:
     - |
       SECRET_NAME="${SECRET_NAME:-gitlab-registry-token}"
+      if [ "x$CI_DEPLOY_USER" == "x" -o "x$CI_DEPLOY_PASSWORD" == "x" ]; then
+        echo A valid deploy token was not found.
+        echo
+        echo This is very likely because the deploy token was not manually configured in gitlab or the configuration documentation was not followed precisely.
+        echo The config is sensitive to the username in particular being set correctly and that it is a deploy token, not a personal or project access token.
+        echo
+        echo Instructions:
+        echo Create a deploy token with just "'read_registry'" permission named "'gitlab-deploy-token'", with username "'gitlab-deploy-token'" as described here:
+        echo https://docs.gitlab.com/ee/user/project/deploy_tokens/#creating-a-deploy-token
+        exit -1
+      fi
       kubectl create secret docker-registry "$SECRET_NAME" --docker-server="$CI_REGISTRY" --docker-username="$CI_DEPLOY_USER" --docker-password="$CI_DEPLOY_PASSWORD" --dry-run -o yaml | kubectl apply -f -
 
