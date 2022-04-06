@@ -108,6 +108,8 @@
     script:
     - |
       set -e
+      mkdir -p .chartmirror/charts
+      cd .chartmirror
       #Copy cert into the ca trust store so that helm chart push will work. (Alpine)
       if [ -f /etc/gitlab-runner/certs/ca.crt ]; then
         cat /etc/gitlab-runner/certs/ca.crt > /usr/local/share/ca-certificates/self.crt
@@ -129,8 +131,9 @@
         cd ..
       fi
       echo Uploading
+      helm package "$CHART" -d charts
       echo "${CI_JOB_TOKEN}" | helm registry login --username gitlab-ci-token --password-stdin "${CI_REGISTRY}"
-      helm push "$CHART" "oci://${CI_REGISTRY_IMAGE}${CONTAINER_PREFIX}"
+      helm push "charts/*" "oci://${CI_REGISTRY_IMAGE}${CONTAINER_PREFIX}"
 
 .pnnllib-gitlab-verify-new-image:
     # Verify that the image doesn't already exist
