@@ -49,6 +49,7 @@
         fi
       done
 
+# Deprecated. switch to .pnnllib-gitlab-mirror-chart-to-repo instead
 .pnnllib-gitlab-mirror-chart-to-image:
     # CHART - Name of the chart to mirror
     # REPO - Repository URL to mirror from
@@ -92,6 +93,44 @@
       echo "$CI_REGISTRY_PASSWORD" | helm registry login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
       helm chart save "$CHART" "$CI_REGISTRY_IMAGE$CONTAINER_PREFIX:$VERSION"
       helm chart push "$CI_REGISTRY_IMAGE$CONTAINER_PREFIX:$VERSION"
+      echo This function is deprecated. Please switch your pipeline to use .pnnllib-gitlab-mirror-chart-to-repo instead.
+
+.pnnllib-gitlab-mirror-chart-to-repo:
+    # CHART - Name of the chart to mirror
+    # REPO - Repository URL to mirror from
+    # VERSION - Optional helm chart version to pull
+    # CONTAINER_PREFIX - extra prefix for the images. Can be used to add a string on the front of an image name or a parent directory in the repository.
+    # PATCH - Optional patch to apply to the chart
+    # PATCHLEVEL - Optional patch level to patch. Default 1.
+    image:
+      name: lachlanevenson/k8s-helm:v3.8.1
+      entrypoint: [""]
+    script:
+    - |
+      set -e
+      #Copy cert into the ca trust store so that helm chart push will work. (Alpine)
+      if [ -f /etc/gitlab-runner/certs/ca.crt ]; then
+        cat /etc/gitlab-runner/certs/ca.crt > /usr/local/share/ca-certificates/self.crt
+        update-ca-certificates
+      fi
+      helm repo add myrepo "$REPO"
+      helm repo update
+      echo Pulling chart.
+      if [ "x$VERSION" != "x" ]; then
+        helm pull myrepo/"$CHART" --untar --version "$VERSION"
+      else
+        helm pull myrepo/"$CHART" --untar
+      fi
+      if [ "x$PATCH" != "x" ]; then
+        echo Patching chart
+        cd "$CHART"
+        PATCHLEVEL="${PATCHLEVEL:-1}"
+        patch -p"$PATCHLEVEL" < "../$PATCH"
+        cd ..
+      fi
+      echo Uploading
+      echo "${CI_JOB_TOKEN}" | helm registry login --username gitlab-ci-token --password-stdin "${CI_REGISTRY}"
+      helm push myrepo/ "oci://${CI_REGISTRY_IMAGE}${CONTAINER_PREFIX}"
 
 .pnnllib-gitlab-verify-new-image:
     # Verify that the image doesn't already exist
