@@ -130,7 +130,7 @@
       fi
       echo Uploading
       echo "${CI_JOB_TOKEN}" | helm registry login --username gitlab-ci-token --password-stdin "${CI_REGISTRY}"
-      helm push myrepo/ "oci://${CI_REGISTRY_IMAGE}${CONTAINER_PREFIX}"
+      helm push "$CHART" "oci://${CI_REGISTRY_IMAGE}${CONTAINER_PREFIX}"
 
 .pnnllib-gitlab-verify-new-image:
     # Verify that the image doesn't already exist
