@@ -133,7 +133,7 @@
       echo Uploading
       helm package "$CHART" -d charts
       echo "${CI_JOB_TOKEN}" | helm registry login --username gitlab-ci-token --password-stdin "${CI_REGISTRY}"
-      helm push "charts/*" "oci://${CI_REGISTRY_IMAGE}${CONTAINER_PREFIX}"
+      helm push charts/* "oci://${CI_REGISTRY_IMAGE}${CONTAINER_PREFIX}"
 
 .pnnllib-gitlab-verify-new-image:
     # Verify that the image doesn't already exist
