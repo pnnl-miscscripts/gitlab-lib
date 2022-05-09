@@ -7,6 +7,7 @@ include:
 variables:
   CONTAINER_TAG: 1.0.0
 
+#Check to see if the image already exists and blocks overwriting an existing image. (New image = new tag, never overwrite, is a best practice.)
 verify-new-image:
   extends: .pnnllib-gitlab-verify-new-image
   stage: check
