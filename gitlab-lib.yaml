@@ -174,7 +174,7 @@
       KANIKOCFG="{\"auths\":{\"$CI_REGISTRY\":{\"auth\":\"$(echo -n ${CI_REGISTRY_USER}:${CI_REGISTRY_PASSWORD} | base64)\"}}}"
       if [ "x${HTTP_PROXY}" != "x" -o "x${HTTPS_PROXY}" != "x" ]; then
         KANIKOCFG="${KANIKOCFG}, \"proxies\": { \"default\": { \"httpProxy\": \"${HTTP_PROXY}\", \"httpsProxy\": \"${HTTPS_PROXY}\", \"noProxy\": \"${NO_PROXY}\"}}"
-        KANIKOPROXYBUILDARGS="--build-arg http_proxy=${HTTP_PROXY} --build-arg HTTP_PROXY=${HTTP_PROXY} --build-arg no_proxy=${NO_PROXY}"
+        KANIKOPROXYBUILDARGS="--build-arg http_proxy=${HTTP_PROXY} --build-arg HTTP_PROXY=${HTTP_PROXY} --build-arg https_proxy=${HTTPS_PROXY} --build-arg HTTPS_PROXY=${HTTPS_PROXY} --build-arg no_proxy=${NO_PROXY}"
       fi
       KANIKOCFG="${KANIKOCFG} }"
       echo "${KANIKOCFG}" > /kaniko/.docker/config.json
