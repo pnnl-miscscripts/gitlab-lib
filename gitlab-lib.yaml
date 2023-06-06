@@ -130,7 +130,7 @@
         update-ca-certificates
       fi
       if [ "x$SOURCE_USERNAME" != "x" -o "x$SOURCE_PASSWORD" != "x" ]; then
-        echo "$SOURCE_PASSWORD" | helm repo add myrepo "$REPO" --username $SOURCE_USERNAME --password-stdin
+        echo "$SOURCE_PASSWORD" | helm repo add myrepo "$REPO" --username "$SOURCE_USERNAME" --password-stdin
       else
         helm repo add myrepo "$REPO"
       fi
