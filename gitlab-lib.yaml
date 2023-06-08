@@ -45,7 +45,7 @@
             dir:/tmp/containers/"$NEWNAME"
           skopeo copy \
             --dest-cert-dir /etc/gitlab-runner/certs/ \
-            --dest-creds "${DEST_REGISTRY_USERNAME}:${DEST_REGSITRY_PASSWORD}" \
+            --dest-creds "${DEST_REGISTRY_USERNAME}:${DEST_REGISTRY_PASSWORD}" \
             dir:/tmp/containers/"$NEWNAME" \
             docker://"${DEST_REGISTRY}/${DEST_REGISTRY_PATH}/${CONTAINER_PREFIX}$NEWNAME"
         else
