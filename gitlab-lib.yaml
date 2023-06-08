@@ -70,6 +70,8 @@
     # DEST_REGISTRY_USERNAME - Optional username to use for destination registry, defaults to CI_REGISTRY_USER
     # DEST_REGSITRY_PASSWORD - Optional password to use for destination registry, defaults to CI_REGISTRY_PASSWORD
     # OVERWRITE - Set this to anything to allow overwriting artifacts that already exist
+    # COPY_LOCAL - Set this to anything to copy artifacts to local disk before pushing to the destination,
+    #   useful when pulling and pushing to the same registry with separate credentials
     image: quay.io/skopeo/stable:latest
     script:
     - |
@@ -99,11 +101,22 @@
             > /dev/null && echo already exists && continue
           set -e
         fi
-        skopeo copy \
-          "docker://$IMAGE" $EXTRA_FLAGS  \
-          --dest-cert-dir /etc/gitlab-runner/certs/ \
-          --dest-creds "${DEST_REGISTRY_USERNAME}:${DEST_REGISTRY_PASSWORD}" \
-          "docker://${DEST_REGISTRY}/${DEST_REGISTRY_PATH}/${PREFIX}$NEWNAME"
+        if [ "x${COPY_LOCAL}" != "x" ]; then
+          skopeo copy $EXTRA_FLAGS \
+            "docker://$IMAGE" \
+            oci:/tmp/containers/"$NEWNAME"
+          skopeo copy \
+            --dest-cert-dir /etc/gitlab-runner/certs/ \
+            --dest-creds "${DEST_REGISTRY_USERNAME}:${DEST_REGISTRY_PASSWORD}" \
+            oci:/tmp/containers/"$NEWNAME" \
+            "docker://${DEST_REGISTRY}/${DEST_REGISTRY_PATH}/${PREFIX}$NEWNAME"
+        else
+          skopeo copy \
+            "docker://$IMAGE" $EXTRA_FLAGS  \
+            --dest-cert-dir /etc/gitlab-runner/certs/ \
+            --dest-creds "${DEST_REGISTRY_USERNAME}:${DEST_REGISTRY_PASSWORD}" \
+            "docker://${DEST_REGISTRY}/${DEST_REGISTRY_PATH}/${PREFIX}$NEWNAME"
+        fi
       done
 
 # Deprecated. switch to .pnnllib-gitlab-mirror-chart-to-repo instead
