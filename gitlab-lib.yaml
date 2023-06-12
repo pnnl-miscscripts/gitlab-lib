@@ -72,7 +72,7 @@
     # OVERWRITE - Set this to anything to allow overwriting artifacts that already exist
     # COPY_LOCAL - Set this to anything to copy artifacts to local disk before pushing to the destination,
     #   useful when pulling and pushing to the same registry with separate credentials
-    image: quay.io/skopeo/stable:latest
+    image: quay.io/skopeo/stable:v1.12.0
     script:
     - |
       set -e
