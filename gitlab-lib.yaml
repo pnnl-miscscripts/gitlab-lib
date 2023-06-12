@@ -63,6 +63,7 @@
     # ARTIFACTS_FILE - Optional artifact filename which lists the desired oci artifacts to be cached in a multiline format
     # PREFIX - extra prefix for the artifacts. Can be used to add a string on the front of an image name or a parent directory in the repository.
     # RETAG - Change the tag or sha of the image. to rename the image from foo:bar to foo:baz, set to "\1:baz"
+    #   Renaming or retagging artifacts that are not container images will likely break them.  Helm charts will break.
     # SOURCE_REGISTRY_USERNAME - Optional username to use for the source registry
     # SOURCE_REGISTRY_PASSWORD - Optional password to use for the source registry
     # DEST_REGISTRY - Optional custom destination registry, defaults to CI_REGISTRY
