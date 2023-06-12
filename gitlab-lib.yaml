@@ -7,6 +7,10 @@
     # RETAG - Change the tag or sha of the image. to rename the image from foo:bar to foo:baz, set to "\1:baz"
     # SOURCE_USERNAME - Optional username to use for download
     # SOURCE_PASSWORD - Optional password to use for download
+    # DEST_REGISTRY - Optional custom destination registry, defaults to CI_REGISTRY
+    # DEST_REGISTRY_PATH - Optional custom destination registry path, defaults to CI_PROJECT_PATH
+    # DEST_REGISTRY_USERNAME - Optional username to use for destination registry, defaults to CI_REGISTRY_USER
+    # DEST_REGSITRY_PASSWORD - Optional password to use for destination registry, defaults to CI_REGISTRY_PASSWORD
     image: docker.io/kfox1111/misc:skopeo
     script:
     - |
@@ -15,6 +19,10 @@
       export EXTRA_FLAGS=""
       [ "x$CONTAINERS_FILE" != "x" ] && export CONTAINERS="$(cat $CONTAINERS_FILE)"
       [ "x$SOURCE_USERNAME" != "x" -o "x$SOURCE_PASSWORD" != "x" ] && export EXTRA_FLAGS="--src-creds ${SOURCE_USERNAME}:${SOURCE_PASSWORD}"
+      : "${DEST_REGISTRY:=${CI_REGISTRY}}"
+      : "${DEST_REGISTRY_PATH:=${CI_PROJECT_PATH}}"
+      : "${DEST_REGISTRY_USERNAME:=${CI_REGISTRY_USER}}"
+      : "${DEST_REGISTRY_PASSWORD:=${CI_REGISTRY_PASSWORD}}"
       echo "Mirroring: $CONTAINERS"
       echo "$CONTAINERS" | while read IMAGE; do
         [ "x$IMAGE" == "x" ] && continue
@@ -25,10 +33,10 @@
         if [ "x$CONTAINER_CONVERT" != "x" ]; then
           set +e
           skopeo inspect \
-            docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME" \
+            docker://"${DEST_REGISTRY}/${DEST_REGISTRY_PATH}/${CONTAINER_PREFIX}$NEWNAME" \
             --raw \
             --cert-dir /etc/gitlab-runner/certs/ \
-            --creds "gitlab-ci-token:$CI_JOB_TOKEN" \
+            --creds "${DEST_REGISTRY_USERNAME}:${DEST_REGISTRY_PASSWORD}" \
             > /dev/null && echo already exists && continue
           set -xe
           skopeo copy $EXTRA_FLAGS \
@@ -37,15 +45,15 @@
             dir:/tmp/containers/"$NEWNAME"
           skopeo copy \
             --dest-cert-dir /etc/gitlab-runner/certs/ \
-            --dest-creds "gitlab-ci-token:$CI_JOB_TOKEN" \
+            --dest-creds "${DEST_REGISTRY_USERNAME}:${DEST_REGISTRY_PASSWORD}" \
             dir:/tmp/containers/"$NEWNAME" \
-            docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME"
+            docker://"${DEST_REGISTRY}/${DEST_REGISTRY_PATH}/${CONTAINER_PREFIX}$NEWNAME"
         else
           skopeo copy \
             docker://"$IMAGE" $EXTRA_FLAGS  \
             --dest-cert-dir /etc/gitlab-runner/certs/ \
-            --dest-creds "gitlab-ci-token:$CI_JOB_TOKEN" \
-            docker://"${CI_REGISTRY_IMAGE}/${CONTAINER_PREFIX}$NEWNAME"
+            --dest-creds "${DEST_REGISTRY_USERNAME}:${DEST_REGISTRY_PASSWORD}" \
+            docker://"${DEST_REGISTRY}/${DEST_REGISTRY_PATH}/${CONTAINER_PREFIX}$NEWNAME"
         fi
       done
 
@@ -102,6 +110,12 @@
     # CONTAINER_PREFIX - extra prefix for the images. Can be used to add a string on the front of an image name or a parent directory in the repository.
     # PATCH - Optional patch to apply to the chart
     # PATCHLEVEL - Optional patch level to patch. Default 1.
+    # SOURCE_USERNAME - Optional username to use for source registry
+    # SOURCE_PASSWORD - Optional password to use for source registry
+    # DEST_REGISTRY - Optional custom destination registry, defaults to CI_REGISTRY
+    # DEST_REGISTRY_PATH - Optional custom destination registry path, defaults to CI_PROJECT_PATH
+    # DEST_REGISTRY_USERNAME - Optional username to use for destination registry, defaults to CI_REGISTRY_USER
+    # DEST_REGSITRY_PASSWORD - Optional password to use for destination registry, defaults to CI_REGISTRY_PASSWORD
     image:
       name: lachlanevenson/k8s-helm:v3.8.1
       entrypoint: [""]
@@ -115,7 +129,11 @@
         cat /etc/gitlab-runner/certs/ca.crt > /usr/local/share/ca-certificates/self.crt
         update-ca-certificates
       fi
-      helm repo add myrepo "$REPO"
+      if [ "x$SOURCE_USERNAME" != "x" -o "x$SOURCE_PASSWORD" != "x" ]; then
+        echo "$SOURCE_PASSWORD" | helm repo add myrepo "$REPO" --username "$SOURCE_USERNAME" --password-stdin
+      else
+        helm repo add myrepo "$REPO"
+      fi
       helm repo update
       echo Pulling chart.
       if [ "x$VERSION" != "x" ]; then
@@ -130,10 +148,14 @@
         patch -p"$PATCHLEVEL" < "../$PATCH"
         cd ..
       fi
+      : "${DEST_REGISTRY:=${CI_REGISTRY}}"
+      : "${DEST_REGISTRY_PATH:=${CI_PROJECT_PATH}}"
+      : "${DEST_REGISTRY_USERNAME:=${CI_REGISTRY_USER}}"
+      : "${DEST_REGISTRY_PASSWORD:=${CI_REGISTRY_PASSWORD}}"
       echo Uploading
       helm package "$CHART" -d charts
-      echo "${CI_JOB_TOKEN}" | helm registry login --username gitlab-ci-token --password-stdin "${CI_REGISTRY}"
-      helm push charts/* "oci://${CI_REGISTRY_IMAGE}${CONTAINER_PREFIX}"
+      echo "${DEST_REGISTRY_PASSWORD}" | helm registry login --username "${DEST_REGISTRY_USERNAME}" --password-stdin "${DEST_REGISTRY}"
+      helm push charts/* "oci://${DEST_REGISTRY}/${DEST_REGISTRY_PATH}${CONTAINER_PREFIX}"
 
 .pnnllib-gitlab-verify-new-image:
     # Verify that the image doesn't already exist
