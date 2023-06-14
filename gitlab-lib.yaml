@@ -57,6 +57,69 @@
         fi
       done
 
+.pnnllib-gitlab-mirror-oci-artifacts:
+    # Arguments are passed in environment variables
+    # ARTIFACTS - Newline separated list of oci artifacts to mirror
+    # ARTIFACTS_FILE - Optional artifact filename which lists the desired oci artifacts to be cached in a multiline format
+    # PREFIX - extra prefix for the artifacts. Can be used to add a string on the front of an image name or a parent directory in the repository.
+    # RETAG - Change the tag or sha of the image. to rename the image from foo:bar to foo:baz, set to "\1:baz"
+    #   Renaming or retagging artifacts that are not container images will likely break them.  Helm charts will break.
+    # SOURCE_REGISTRY_USERNAME - Optional username to use for the source registry
+    # SOURCE_REGISTRY_PASSWORD - Optional password to use for the source registry
+    # DEST_REGISTRY - Optional custom destination registry, defaults to CI_REGISTRY
+    # DEST_REGISTRY_PATH - Optional custom destination registry path, defaults to CI_PROJECT_PATH
+    # DEST_REGISTRY_USERNAME - Optional username to use for destination registry, defaults to CI_REGISTRY_USER
+    # DEST_REGSITRY_PASSWORD - Optional password to use for destination registry, defaults to CI_REGISTRY_PASSWORD
+    # OVERWRITE - Set this to anything to allow overwriting artifacts that already exist
+    # COPY_LOCAL - Set this to anything to copy artifacts to local disk before pushing to the destination,
+    #   useful when pulling and pushing to the same registry with separate credentials
+    image: quay.io/skopeo/stable:v1.12.0
+    script:
+    - |
+      set -e
+      mkdir -p /etc/gitlab-runner/certs/
+      export EXTRA_FLAGS=""
+      [ "x$ARTIFACTS_FILE" != "x" ] && export ARTIFACTS="$(cat $ARTIFACTS_FILE)"
+      [ "x$SOURCE_REGISTRY_USERNAME" != "x" -o "x$SOURCE_REGISTRY_PASSWORD" != "x" ] && export EXTRA_FLAGS="--src-creds ${SOURCE_REGISTRY_USERNAME}:${SOURCE_REGISTRY_PASSWORD}"
+      : "${DEST_REGISTRY:=${CI_REGISTRY}}"
+      : "${DEST_REGISTRY_PATH:=${CI_PROJECT_PATH}}"
+      : "${DEST_REGISTRY_USERNAME:=${CI_REGISTRY_USER}}"
+      : "${DEST_REGISTRY_PASSWORD:=${CI_REGISTRY_PASSWORD}}"
+      echo "Mirroring: $ARTIFACTS"
+      echo "$ARTIFACTS" | while read IMAGE; do
+        [ "x$IMAGE" == "x" ] && continue
+        NEWNAME=$(echo "$IMAGE" | sed 's@.*/@@g')
+        [ "x$RETAG" == "x" ] || NEWNAME=$(echo "$NEWNAME" | sed 's/^\([^@:]*\)\([:@]\)\(.*\)/'"$RETAG"'/')
+        mkdir -p /tmp/containers/"$NEWNAME"
+        echo Mirroring "$IMAGE" to "$NEWNAME"
+        if [ "x${OVERWRITE}" == "x" ]; then
+          set +e
+          skopeo inspect \
+            "docker://${DEST_REGISTRY}/${DEST_REGISTRY_PATH}/${PREFIX}$NEWNAME" \
+            --raw \
+            --cert-dir /etc/gitlab-runner/certs/ \
+            --creds "${DEST_REGISTRY_USERNAME}:${DEST_REGISTRY_PASSWORD}" \
+            > /dev/null && echo already exists && continue
+          set -e
+        fi
+        if [ "x${COPY_LOCAL}" != "x" ]; then
+          skopeo copy $EXTRA_FLAGS \
+            "docker://$IMAGE" \
+            oci:/tmp/containers/"$NEWNAME"
+          skopeo copy \
+            --dest-cert-dir /etc/gitlab-runner/certs/ \
+            --dest-creds "${DEST_REGISTRY_USERNAME}:${DEST_REGISTRY_PASSWORD}" \
+            oci:/tmp/containers/"$NEWNAME" \
+            "docker://${DEST_REGISTRY}/${DEST_REGISTRY_PATH}/${PREFIX}$NEWNAME"
+        else
+          skopeo copy \
+            "docker://$IMAGE" $EXTRA_FLAGS  \
+            --dest-cert-dir /etc/gitlab-runner/certs/ \
+            --dest-creds "${DEST_REGISTRY_USERNAME}:${DEST_REGISTRY_PASSWORD}" \
+            "docker://${DEST_REGISTRY}/${DEST_REGISTRY_PATH}/${PREFIX}$NEWNAME"
+        fi
+      done
+
 # Deprecated. switch to .pnnllib-gitlab-mirror-chart-to-repo instead
 .pnnllib-gitlab-mirror-chart-to-image:
     # CHART - Name of the chart to mirror
