@@ -249,6 +249,7 @@
     # HTTP_PROXY - optional, proxy to use and pass when a http proxy is needed.
     # HTTPS_PROXY - optional, proxy to use and pass when a https proxy is needed.
     # NO_PROXY - optional, proxy settings to use and pass when a proxy shouldn't be used
+    # CONTEXT - optional, a relative path from the base-dir of repo where kaniko should focus (useful if Dockerfiles are in a subdir of repo)
     image:
       name: gcr.io/kaniko-project/executor:debug
       entrypoint: [""]
@@ -266,10 +267,11 @@
       if [ -f /etc/gitlab-runner/certs/ca.crt ]; then
         cat /etc/gitlab-runner/certs/ca.crt >> /kaniko/ssl/certs/ca-certificates.crt
       fi
+      CONTEXT="${CONTEXT:-$CI_PROJECT_DIR}"
       DOCKERFILE="${DOCKERFILE:-Dockerfile}"
       CONTAINER_TAG="${CONTAINER_TAG:-$CI_COMMIT_TAG}"
       KANIKO_EXTRA_ARGS="${KANIKO_EXTRA_ARGS:-}"
-      /kaniko/executor $KANIKOPROXYBUILDARGS --context "$CI_PROJECT_DIR" --dockerfile "$CI_PROJECT_DIR/$DOCKERFILE" --destination "$CI_REGISTRY_IMAGE${CONTAINER_PREFIX}:$CONTAINER_TAG" $KANIKO_EXTRA_ARGS
+      /kaniko/executor $KANIKOPROXYBUILDARGS --context "$CONTEXT" --dockerfile "$CONTEXT/$DOCKERFILE" --destination "$CI_REGISTRY_IMAGE${CONTAINER_PREFIX}:$CONTAINER_TAG" $KANIKO_EXTRA_ARGS
 
 .pnnllib-gitlab-load-deploy-token:
     # Load a gitlab deploy token into Kubernetes
