@@ -267,10 +267,10 @@
         cat /etc/gitlab-runner/certs/ca.crt >> /kaniko/ssl/certs/ca-certificates.crt
       fi
       CONTEXT="${CONTEXT:-$CI_PROJECT_DIR}"
-      DOCKERFILE="${DOCKERFILE:-CONTEXT/Dockerfile}"
+      DOCKERFILE="${DOCKERFILE:-Dockerfile}"
       CONTAINER_TAG="${CONTAINER_TAG:-$CI_COMMIT_TAG}"
       KANIKO_EXTRA_ARGS="${KANIKO_EXTRA_ARGS:-}"
-      /kaniko/executor $KANIKOPROXYBUILDARGS --context "$CONTEXT" --dockerfile "$DOCKERFILE" --destination "$CI_REGISTRY_IMAGE${CONTAINER_PREFIX}:$CONTAINER_TAG" $KANIKO_EXTRA_ARGS
+      /kaniko/executor $KANIKOPROXYBUILDARGS --context "$CONTEXT" --dockerfile "$CONTEXT/$DOCKERFILE" --destination "$CI_REGISTRY_IMAGE${CONTAINER_PREFIX}:$CONTAINER_TAG" $KANIKO_EXTRA_ARGS
 
 .pnnllib-gitlab-load-deploy-token:
     # Load a gitlab deploy token into Kubernetes
