@@ -249,6 +249,7 @@
     # HTTP_PROXY - optional, proxy to use and pass when a http proxy is needed.
     # HTTPS_PROXY - optional, proxy to use and pass when a https proxy is needed.
     # NO_PROXY - optional, proxy settings to use and pass when a proxy shouldn't be used
+    # CONTEXT - optional, a relative path from the base-dir of repo where kaniko should focus (useful if Dockerfiles are in a subdir of repo)
     image:
       name: gcr.io/kaniko-project/executor:debug
       entrypoint: [""]
