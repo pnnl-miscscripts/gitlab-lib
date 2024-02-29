@@ -15,4 +15,4 @@ mirrorchart:
     CHART: metrics-server
     REPO: https://kubernetes-charts.storage.googleapis.com/
     VERSION: 2.11.1
-    CONTAINER_PREFIX: /chart
+    CONTAINER_PREFIX: /chart/metrics-server
